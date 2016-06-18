@@ -1,0 +1,56 @@
+body {
+  min-width: 40em;
+  min-height: 20em;
+  background-color: #e0e0e0;
+}
+#wrapper {
+  min-height: 180px;
+}
+.loading {
+  background-image: url(gears.gif );
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1em;
+}
+.footer {
+  border-top: 1px solid #ccc;
+  margin-top: 1em;
+  padding: 0 0.5em;
+  color: #666;
+  font-size: 0.9em;
+}
+.footer a {
+  color: #666;
+  font-weight: bold;
+  text-decoration: none;
+}
+.footer ul {
+  list-style-type: none;
+  text-align: center;
+}
+.footer ul li {
+  display: inline-block;
+  padding-right: 0.5em;
+}
+.footer ul li:not(:last-child) {
+  border-right: 1px solid #ccc;
+}
+.wpnot-notificationsWrapper {
+  width: 100%;
+}
+.wpnot-notificationsWrapper-title {
+  display: block;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+}
+.wpnot-notificationsWrapper-errorMessage {
+  display: block;
+  text-align: center;
+  font-size: 1.3em;
+  color: #666;
+  padding: 0.5em;
+}
