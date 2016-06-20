@@ -1,5 +1,5 @@
 wpnot.reducer.sources = function ( state, action ) {
-	var newState;
+	var newState, source;
 
 	if ( state === undefined ) {
 		return {};
@@ -11,7 +11,8 @@ wpnot.reducer.sources = function ( state, action ) {
 			newState[ action.data.id ] = {
 				id: action.data.id,
 				name: action.data.name,
-				url: action.data.url
+				url: action.data.url,
+				base: action.data.base
 			};
 
 			return newState;

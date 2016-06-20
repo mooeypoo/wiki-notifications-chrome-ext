@@ -47,21 +47,22 @@ module.exports = function ( grunt ) {
 						'src/redux/reducer.notifications.js',
 						'src/redux/reducer.sources.js',
 						'src/redux/reducer.api.js',
+						'src/redux/reducer.count.js',
 						'src/redux/reducer.combined.js'
 					],
 					'dist/wpnot.react.jsx': [
 						'src/react/wpnot.react.jsx',
-					// 	'src/react/wpnot.notificationsWrapper.jsx',
-					// 	'src/react/wpnot.notificationsList.jsx',
-					// 	'src/react/wpnot.notificationsItem.jsx',
-					// 	'src/react/wpnot.initialize.jsx'
 					]
 				}
 			}
+		},
+		qunit: {
+			all: [ 'tests/index.html' ]
 		}
 	} );
 
 	grunt.registerTask( 'default', [ 'lint', 'build' ] );
+	grunt.registerTask( 'test', [ 'qunit' ] );
 	grunt.registerTask( 'lint', [ 'csslint' ] );
 	grunt.registerTask( 'build', [ 'less', 'concat' ] );
 };

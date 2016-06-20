@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+  "name": "Wiki Notifications",
+  "description": "This extension shows Wiki notifications in a browser popup",
+  "version": "1.0",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "browser_action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    },
+    "default_title": "Wiki notifications",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "https://ajax.googleapis.com/",
+    "https://*.wikipedia.org/w/api.php",
+    "http://*.wiki.local.wmftest.net:8080/w/api.php"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+}

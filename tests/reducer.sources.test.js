@@ -10,13 +10,14 @@ QUnit.test( "Sources reducer", function( assert ) {
 	assert.deepEqual(
 		wpnot.reducer.sources(
 			{},
-			wpnot.action.addSource( 'foo', 'Foo bar', 'http://example.com' )
+			wpnot.action.addSource( 'foo', 'Foo bar', 'http://example.com', 'http://example.com/api.php' )
 		),
 		{
 			foo: {
 				id: 'foo',
 				name: 'Foo bar',
-				url: 'http://example.com'
+				base: 'http://example.com',
+				url: 'http://example.com/api.php'
 			}
 		},
 		'Adding source'
@@ -28,21 +29,24 @@ QUnit.test( "Sources reducer", function( assert ) {
 				foo: {
 					id: 'foo',
 					name: 'Foo bar',
-					url: 'http://example.com'
+					base: 'http://example.com',
+					url: 'http://example.com/api.php'
 				}
 			},
-			wpnot.action.addSource( 'moo', 'Moo far', 'http://another.example.com' )
+			wpnot.action.addSource( 'moo', 'Moo far', 'http://another.example.com', 'http://another.example.com/api.php' )
 		),
 		{
 			foo: {
 				id: 'foo',
 				name: 'Foo bar',
-				url: 'http://example.com'
+				base: 'http://example.com',
+				url: 'http://example.com/api.php'
 			},
 			moo: {
 				id: 'moo',
 				name: 'Moo far',
-				url: 'http://another.example.com'
+				base: 'http://another.example.com',
+				url: 'http://another.example.com/api.php'
 			}
 		},
 		'Adding second source'
@@ -55,12 +59,14 @@ QUnit.test( "Sources reducer", function( assert ) {
 				foo: {
 					id: 'foo',
 					name: 'Foo bar',
-					url: 'http://example.com'
+					base: 'http://example.com',
+					url: 'http://example.com/api.php'
 				},
 				moo: {
 					id: 'moo',
 					name: 'Moo far',
-					url: 'http://another.example.com'
+					base: 'http://another.example.com',
+					url: 'http://another.example.com/api.php'
 				}
 			},
 			wpnot.action.removeSource( 'moo' )
@@ -69,7 +75,8 @@ QUnit.test( "Sources reducer", function( assert ) {
 			foo: {
 				id: 'foo',
 				name: 'Foo bar',
-				url: 'http://example.com'
+				base: 'http://example.com',
+				url: 'http://example.com/api.php'
 			}
 		},
 		'Removing source'

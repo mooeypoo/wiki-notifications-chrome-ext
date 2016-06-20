@@ -13,6 +13,8 @@ var API_REQUEST_NOTIFICATIONS = 'ApiRequestNotifications';
 var API_ACCEPT_NOTIFICATIONS = 'ApiAcceptNotifications';
 var API_ERROR_NOTIFICATIONS = 'ApiErrorNotifications';
 
+var UPDATE_COUNT = 'updateCount';
+
 var MARK_READ = 'markNotificationsRead';
 var MARK_UNREAD = 'markNotificationsUnread';
 
@@ -20,6 +22,7 @@ var ADD_SOURCE = 'addSource';
 var REMOVE_SOURCE = 'removeSource';
 
 var CONFIG_WIKI_URL = 'http://dev.wiki.local.wmftest.net:8080/w/api.php'
+var CONFIG_WIKI_NAME = 'English Wikipedia';
 
 wpnot.helper = {
 	/**
@@ -72,10 +75,60 @@ wpnot.action = {
 	 * Mark as read action in a single wiki
 	 *
 	 * @param {string} wikiName Name of the wiki
+	 * @param {string} id Notification id
+	 * @return {Object} Action
+	 */
+	markRead: function ( wikiName, id ) {
+		var wikiIdList = {};
+
+		return function ( dispatch ) {
+			dispatch( wpnot.action.markReadInModel( wikiName, id ) );
+			dispatch( wpnot.action.markReadInAPI( wikiName, id ) );
+		};
+	},
+
+	/**
+	 * Mark notification as read in the API.
+	 * This action should not be called directly.
+	 * Please see #markRead
+	 *
+	 * @private
+	 * @param {string} wikiName Name of the wiki
+	 * @param {string} id An array of IDs
+	 * @return {Object} Action
+	 */
+	markReadInAPI: function ( wikiName, id ) {
+		return function ( dispatch, getState ) {
+			var sources = getState().sources;
+
+			// Get the API access point of this wiki
+			url = sources[ wikiName ] && sources[ wikiName ].url;
+			if ( !url ) {
+				url = CONFIG_WIKI_URL;
+			}
+
+			return $.ajax( {
+				url: url,
+				dataType: 'json',
+				data: {
+					action: 'echomarkread',
+					list: id
+				}
+			} );
+		};
+	},
+
+	/**
+	 * Mark item as read in the state model.
+	 * This action should not be called directly.
+	 * Please see #markRead
+	 *
+	 * @private
+	 * @param {string} wikiName Name of the wiki
 	 * @param {string|string[]} ids An array of IDs
 	 * @return {Object} Action
 	 */
-	markReadInWiki: function ( wikiName, ids ) {
+	markReadInModel: function ( wikiName, ids ) {
 		var wikiIdList = {};
 
 		ids = Array.isArray( ids ) ? ids : [ ids ];
@@ -88,43 +141,82 @@ wpnot.action = {
 	},
 
 	/**
-	 * Mark as read action in multiple wikis
+	 * Update the count
 	 *
-	 * @param {Object} wikiIdList An object representing
-	 *  wikis with the list of the IDs to be marked as read.
+	 * @param {number} count Notification count
 	 * @return {Object} Action
 	 */
-	markRead: function ( wikiIdList ) {
+	updateCount: function ( count ) {
 		return {
-			type: MARK_READ,
-			wikiIds: wikiIdList
+			type: UPDATE_COUNT,
+			count: count
+		};
+	},
+
+	/**
+	 * Get current notification count from the API
+	 *
+	 * @return {Object} Action
+	 */
+	getNotificationCount: function () {
+		return function ( dispatch ) {
+			return $.ajax( {
+				url: CONFIG_WIKI_URL,
+				dataType: 'json',
+				data: {
+					action: 'query',
+					format: 'json',
+					meta: 'notifications',
+					notprop: 'count',
+					bundle: false,
+				}
+			} )
+			.then( function ( data ) {
+				dispatch( wpnot.action.updateCount( data.query.notifications.rawcount ) );
+			} );
 		};
 	},
 
 	/**
 	 * Populate notification list from an object
 	 *
-	 * @param {[type]} obj Object to populate from
+	 * @param {Object[]} list Object array to populate from
 	 * @return {Object} Action
 	 */
-	populateFromObject: function ( obj ) {
+	populateFromObject: function ( list ) {
 		return {
 			type: POPULATE_FROM_OBJECT,
-			data: obj
+			list: list
 		};
 	},
 
-	addSource: function ( sourceId, sourceName, sourceUrl ) {
+	/**
+	 * Add source
+	 *
+	 * @param {string} sourceId Source ID
+	 * @param {string} sourceName Source display name
+	 * @param {string} sourceBase Base URL for articles
+	 * @param {string} sourceUrl Access point for API
+	 * @return {Object} Action
+	 */
+	addSource: function ( sourceId, sourceName, sourceBase, sourceUrl ) {
 		return {
 			type: ADD_SOURCE,
 			data: {
 				id: sourceId,
 				name: sourceName,
+				base: sourceBase,
 				url: sourceUrl
 			}
 		};
 	},
 
+	/**
+	 * Remove a source
+	 *
+	 * @param {string} sourceId Source ID
+	 * @return {Object} Action
+	 */
 	removeSource: function ( sourceId ) {
 		return {
 			type: REMOVE_SOURCE,
@@ -132,15 +224,56 @@ wpnot.action = {
 		};
 	},
 
-	/* API */
+	/**
+	 * Fetch notifications list
+	 *
+	 * @return {Function} Thunk function
+	 */
+	fetchNotifications: function () {
+		return function ( dispatch ) {
+			// Update state to say we are updating the API
+			dispatch( wpnot.action.startFetchNotifications() );
+
+			return dispatch( wpnot.action.fetchNotificationsFromAPI() )
+				.then( function ( list ) {
+					dispatch( wpnot.action.populateFromObject( list ) );
+					dispatch( wpnot.action.endFetchNotifications() );
+				} );
+
+		};
+	},
+
+	/**
+	 * Fetch notifications from given source wikis
+	 * This action should not be called directly.
+	 * Please see #fetchNotifications
+	 *
+	 * @private
+	 * @param {string[]} sources An array of sources
+	 * @param {Object[]} list List that contains local notifications
+	 * @return {Function} Thunk function
+	 */
+	fetchFromSources: function ( sources, list ) {
+		return function ( dispatch ) {
+			// We start by calling 'local' notifications
+			return dispatch( wpnot.action.fetchNotificationsFromAPI( sources ) )
+				.then( function ( foreignList ) {
+					// Concatenate both lists
+					return list.concat( foreignList );
+				} );
+		};
+	},
 
 	/**
 	 * Get notifications from the server.
+	 * This action should not be called directly.
+	 * Please see #fetchNotifications
 	 *
+	 * @private
 	 * @param {string} [wiki] Wiki name
 	 * @return {Function} Thunk function
 	 */
-	fetchNotifications: function ( wikis ) {
+	fetchNotificationsFromAPI: function ( wikis ) {
 		var params = {
 				action: 'query',
 				format: 'json',
@@ -149,6 +282,7 @@ wpnot.action = {
 				notfilter: '!read',
 				notprop: 'list',
 				notformat: 'model',
+				bundle: false,
 				notlimit: 10,
 			};
 
@@ -160,9 +294,6 @@ wpnot.action = {
 		}
 
 		return function ( dispatch ) {
-			// Update state to say we are updating the API
-			dispatch( wpnot.action.startFetchNotifications( wikis ) );
-
 			return $.ajax( {
 				url: CONFIG_WIKI_URL,
 				dataType: 'json',
@@ -171,53 +302,102 @@ wpnot.action = {
 			.then(
 				// Success
 				function ( data ) {
-					return data.query.notifications.list;
+					var i,
+						sources = [],
+						newList = [],
+						list = data.query.notifications.list;
+
+					for ( i = 0; i < list.length; i++ ) {
+						if ( list[ i ].id < 0 ) {
+							// This is a cross-wiki notification
+							// Add source information
+							for ( source in list[ i ].sources ) {
+								dispatch( wpnot.action.addSource(
+									// source ID
+									source,
+									// sourceName
+									list[ i ].sources[ source ].title,
+									// sourceBase
+									list[ i ].sources[ source ].base,
+									// sourceUrl
+									list[ i ].sources[ source ].url
+								) );
+
+								sources.push( source );
+							}
+
+						} else {
+							newList.push( list[ i ] );
+						}
+					}
+
+					if ( sources.length ) {
+						// This is another promise that will fetch notifications
+						// from the API and join them with the given list
+						return dispatch( wpnot.action.fetchFromSources( sources, newList ) );
+					}
+					return newList;
 				},
 				// Failure
 				function () {
-					dispatch( wpnot.action.errorFetchNotifications( wikis ) );
+					dispatch( wpnot.action.errorFetchNotifications() );
 				}
-			)
-			.then( function () {
-				dispatch( wpnot.action.populateFromObject() );
-				dispatch( wpnot.action.endFetchNotifications( wikis ) );
-			} )
+			);
 		};
 	},
 
-	startFetchNotifications: function ( wiki ) {
+	/**
+	 * Flag the start of fetch notifications
+	 *
+	 * @return {Object} Action
+	 */
+	startFetchNotifications: function () {
 		return {
 			type: API_REQUEST_NOTIFICATIONS
-		}
+		};
 	},
-	endFetchNotifications: function ( wiki ) {
+
+	/**
+	 * Flag the end of fetch notifications
+	 *
+	 * @return {Object} Action
+	 */
+	endFetchNotifications: function () {
 		return {
 			type: API_ACCEPT_NOTIFICATIONS,
 			date: Date.now()
-		}
+		};
 	},
-	errorFetchNotifications: function ( wiki ) {
+
+	/**
+	 * Flag an error of fetch notifications
+	 *
+	 * @return {Object} Action
+	 */
+	errorFetchNotifications: function () {
 		return {
 			type: API_ERROR_NOTIFICATIONS,
 			date: Date.now()
-		}
+		};
 	}
-
 };
 
 wpnot.reducer.notifications = function ( state, action ) {
+	var list;
 	if ( state === undefined ) {
 		return [];
 	}
 
 	switch ( action.type ) {
 		case POPULATE_FROM_OBJECT:
-			return action.data.list.map(
-					wpnot.helper.sanitizeNotificationData
-				);
+			list = action.list.filter( function ( item ) {
+				// Remove xwiki notifications
+				return item.id >= 0;
+			} );
+			return list.map(
+				wpnot.helper.sanitizeNotificationData
+			);
 		case MARK_READ:
-			// TODO: This should work with async actions
-			// to update the API
 
 			return state.filter( function ( item ) {
 				return !wpnot.helper.isNotificationInWikiId( item, action.wikiIds )
@@ -248,7 +428,7 @@ wpnot.reducer.notifications = function ( state, action ) {
  */
 
 wpnot.reducer.sources = function ( state, action ) {
-	var newState;
+	var newState, source;
 
 	if ( state === undefined ) {
 		return {};
@@ -260,7 +440,8 @@ wpnot.reducer.sources = function ( state, action ) {
 			newState[ action.data.id ] = {
 				id: action.data.id,
 				name: action.data.name,
-				url: action.data.url
+				url: action.data.url,
+				base: action.data.base
 			};
 
 			return newState;
@@ -312,8 +493,23 @@ wpnot.reducer.api = function ( state, action ) {
 	return state;
 };
 
+wpnot.reducer.count = function ( state, action ) {
+	if ( state === undefined ) {
+		return 0;
+	}
+
+	switch ( action.type ) {
+		case UPDATE_COUNT:
+			return action.count;
+	}
+
+	return state;
+};
+
+
 wpnot.reducer.combinedReducer = Redux.combineReducers( {
 	list: wpnot.reducer.notifications,
 	sources: wpnot.reducer.sources,
-	api: wpnot.reducer.api
+	api: wpnot.reducer.api,
+	count: wpnot.reducer.count
 } );

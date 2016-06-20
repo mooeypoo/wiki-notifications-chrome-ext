@@ -1,16 +1,19 @@
 wpnot.reducer.notifications = function ( state, action ) {
+	var list;
 	if ( state === undefined ) {
 		return [];
 	}
 
 	switch ( action.type ) {
 		case POPULATE_FROM_OBJECT:
-			return action.data.list.map(
-					wpnot.helper.sanitizeNotificationData
-				);
+			list = action.list.filter( function ( item ) {
+				// Remove xwiki notifications
+				return item.id >= 0;
+			} );
+			return list.map(
+				wpnot.helper.sanitizeNotificationData
+			);
 		case MARK_READ:
-			// TODO: This should work with async actions
-			// to update the API
 
 			return state.filter( function ( item ) {
 				return !wpnot.helper.isNotificationInWikiId( item, action.wikiIds )

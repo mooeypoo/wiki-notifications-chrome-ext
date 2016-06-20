@@ -2,6 +2,7 @@ body {
   min-width: 40em;
   min-height: 20em;
   background-color: #e0e0e0;
+  font-size: 14px;
 }
 #wrapper {
   min-height: 180px;
@@ -44,8 +45,8 @@ body {
 .wpnot-notificationsWrapper-title {
   display: block;
   font-size: 1.2em;
-  font-weight: bold;
   text-align: center;
+  margin: 1em;
 }
 .wpnot-notificationsWrapper-errorMessage {
   display: block;
@@ -53,4 +54,78 @@ body {
   font-size: 1.3em;
   color: #666;
   padding: 0.5em;
+}
+.wpnot-notificationItem {
+  display: table;
+  padding: 1.5em;
+  background-color: #ffffff;
+  -webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.25);
+  -moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.25);
+}
+.wpnot-notificationItem-row {
+  display: table-row;
+}
+.wpnot-notificationItem-wiki {
+  display: table-cell;
+  vertical-align: top;
+}
+.wpnot-notificationItem-wiki-text {
+  display: inline-block;
+  font-size: 0.9em;
+  padding: 0.2em;
+  border: 1px solid #ad8f8f;
+  background: #fff0f0;
+  border-radius: 5px;
+  color: #b76f6f;
+  text-align: center;
+}
+.wpnot-notificationItem-timestamp {
+  display: table-cell;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-size: 0.8em;
+  color: #666;
+}
+.wpnot-notificationItem-content {
+  display: table-cell;
+  width: 100%;
+  padding: 0 0.5em;
+}
+.wpnot-notificationItem-content-header {
+  font-size: 1.1em;
+  color: #666;
+}
+.wpnot-notificationItem-content-body {
+  font-size: 0.9em;
+  color: #777;
+  margin-top: 0.5em;
+}
+.wpnot-notificationItem-markread {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 1em;
+}
+.wpnot-notificationItem-markread-icon {
+  display: inline-block;
+  background-image: url(close-ltr.png );
+  width: 24px;
+  height: 24px;
+}
+.wpnot-notificationItem-markread:hover {
+  background-color: #ccc;
+}
+.wpnot-notificationItem-animation-enter {
+  opacity: 0.01;
+}
+.wpnot-notificationItem-animation-enter.wpnot-notificationItem-active {
+  opacity: 1;
+  transition: opacity 500ms ease-in;
+}
+.wpnot-notificationItem-animation-leave {
+  opacity: 1;
+}
+.wpnot-notificationItem-animation-leave.wpnot-notificationItem-active {
+  opacity: 0.01;
+  transition: opacity 300ms ease-in;
 }
